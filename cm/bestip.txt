@@ -1,5 +1,5 @@
 127.0.0.1:443#CFNat-订阅反代格式-订阅链接?proxyip=反代
-104.16.16.0:443#CFNat-手搓反代格式-PATH路径&proxyip=反代or路径path空则/?proxyip=反代
+104.16.16.0:443#手搓反代格式-PATH路径&proxyip=反代or路径path空则/?proxyip=反代
 104.18.77.9:443#DIY天书-IPV4-fast-01
 
 
