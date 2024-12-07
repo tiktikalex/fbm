@@ -3,3 +3,16 @@ ts.hpc.tw
 sjc.o00o.ooo
 122.118.163.133
 61.224.71.143
+
+Trojan协议，新建项目选择。pages 然后取个名字。 然后选择压缩文件上传。然后点击你本地的。_worker.js 上传，然后绑定域名。然后变量填写好完成之后。 然后重重新点击创建部署部署一次，再上传一遍就行了。
+
+必须要的变量。
+
+变量名 PASSWORD  填auto
+变量名 ADDAPI 填https://cfipv4.xxxxxxxx.nyc.mn/
+变量名 SOCKS5 填 onlyno999:lovesver07@s7.serv00.com:48613,onlyno999:lovesver00@s12.serv00.com:7294
+,oneforall:allforone@s9.serv00.com:1766
+
+变量名 URL 填 自己没有也可以填我的😂 https://cf-worker-dir-bke.pages.dev/
+
+这几个必要的弄好就ok了，然后再重新上传一次搞定。
