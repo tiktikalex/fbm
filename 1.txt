@@ -19,7 +19,7 @@ www.gov.ua
 
 
 
-
+第三方域
 cfip.xxxxxxxx.tk#OTC提供维护官方优选
 bestcf.onecf.eu.org#Mingyu提供维护官方优选
 cf.zhetengsha.eu.org#小一提供维护官方优选
@@ -38,19 +38,18 @@ cf.345673.xyz
 
 
 
-
+第三方IP
 https://ipdb.api.030101.xyz/?type=bestcf&country=true
 https://addressesapi.090227.xyz/CloudFlareYes
 https://addressesapi.090227.xyz/ip.164746.xyz
 
 
 
-
-
+第三方反域
 bestproxy.onecf.eu.org#Mingyu提供维护反代优选
 proxy.xxxxxxxx.tk#OTC提供维护反代优选
 
 
 
-
+第三方反IP
 https://ipdb.api.030101.xyz/?type=bestproxy&country=true
