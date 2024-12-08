@@ -1,4 +1,4 @@
-https://raw.githubusercontent.com/tiktikalex/fbm/refs/heads/main/tianshu/bestipplus3rd.txt
+
 https://ipdb.api.030101.xyz/?type=bestcf&country=true
 https://addressesapi.090227.xyz/CloudFlareYes
 https://addressesapi.090227.xyz/ip.164746.xyz
