@@ -64,6 +64,10 @@ https://addressesapi.090227.xyz/ip.164746.xyz
 bestproxy.onecf.eu.org#Mingyu提供维护反代优选
 proxy.xxxxxxxx.tk#OTC提供维护反代优选
 
+cdn-all.xn--b6gac.eu.org        cdn.xn--b6gac.eu.org        cdn-b100.xn--b6gac.eu.org
+
+ts.hpc.tw
+
 
 
 第三方反IP
