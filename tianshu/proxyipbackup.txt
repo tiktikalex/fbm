@@ -4,6 +4,11 @@ TG:CMLiussss@socks5.serv00.090227.xyz:35555
 SOCKS5 变量 X3QAzDmuiv:txNcsW2KrY@vless.niceai.us.kg:46784  是VPS SOCKS5非SERV00
 
 ts.hpc.tw
+proxy.xxxxxxxx.tk
+edgetunnel.anycast.eu.org
+cdn.xn--b6gac.eu.org
+cdn-all.xn--b6gac.eu.org
+bestproxy.onecf.eu.org
 sjc.o00o.ooo
 122.118.163.133
 61.224.71.143
