@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Cloudflare Worker 一键部署平台</title>
+    <style>
+        body { max-width: 800px; margin: 20px auto; padding: 20px; font-family: Arial, sans-serif; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow: auto; }
+        .status { margin: 15px 0; padding: 10px; border-left: 4px solid #007bff; }
+        .success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Cloudflare Worker 全功能部署工具</h1>
+    
+    <div class="form-group">
+        <label>Cloudflare 账户 ID *</label>
+        <input type="text" id="accountId" required placeholder="例：e1f2d3e4f5g6h7i8j9k0l1m2n3o4p5">
+    </div>
+
+    <div class="form-group">
+        <label>API 令牌 *</label>
+        <input type="password" id="apiToken" required 
+               placeholder="需要权限：Workers Edit, DNS Write, Account Read">
+    </div>
+
+    <div class="form-group">
+        <label>Worker 名称 *</label>
+        <input type="text" id="workerName" required 
+               placeholder（小写字母、数字和连字符，例：my-worker-01）">
+    </div>
+
+    <div class="form-group">
+        <label>GitHub 代码 URL *</label>
+        <input type="url" id="githubUrl" required 
+               placeholder="例：https://github.com/username/repo/blob/main/worker.js">
+    </div>
+
+    <div class="form-group">
+        <label>环境变量 UUID *</label>
+        <input type="text" id="uuid" required 
+               placeholder（将作为加密环境变量注入）">
+    </div>
+
+    <div class="form-group">
+        <label>自定义域名（可选）</label>
+        <input type="text" id="customDomain" 
+               placeholder（需已添加到Cloudflare，例：app.example.com）">
+    </div>
+
+    <button onclick="deployWorker()">开始部署</button>
+    
+    <div id="status" class="status"></div>
+    <div id="result"></div>
+
+    <script>
+        async function getGitHubRawUrl(url) {
+            return url.replace('github.com', 'raw.githubusercontent.com')
+                      .replace('/blob/', '/');
+        }
+
+        async function fetchWithStatus(text, promise) {
+            const status = document.getElementById('status');
+            status.innerHTML += `<p>${text}...</p>`;
+            return promise;
+        }
+
+        async function deployWorker() {
+            const config = {
+                accountId: document.getElementById('accountId').value.trim(),
+                apiToken: document.getElementById('apiToken').value.trim(),
+                workerName: document.getElementById('workerName').value.trim(),
+                githubUrl: document.getElementById('githubUrl').value.trim(),
+                uuid: document.getElementById('uuid').value.trim(),
+                customDomain: document.getElementById('customDomain').value.trim()
+            };
+
+            const resultDiv = document.getElementById('result');
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<h3>部署进度：</h3>';
+            resultDiv.innerHTML = '';
+
+            try {
+                // 获取 GitHub 代码
+                const codeUrl = await getGitHubRawUrl(config.githubUrl);
+                const workerCode = await fetchWithStatus('从 GitHub 获取代码', 
+                    fetch(codeUrl).then(r => r.ok ? r.text() : Promise.reject('代码获取失败')));
+
+                // 部署 Worker
+                const deployRes = await fetchWithStatus('部署 Worker 脚本',
+                    fetch(`https://api.cloudflare.com/client/v4/accounts/${config.accountId}/workers/scripts/${config.workerName}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${config.apiToken}`,
+                            'Content-Type': 'application/javascript'
+                        },
+                        body: workerCode
+                    }).then(r => r.json()));
+
+                if (!deployRes.success) throw deployRes.errors;
+
+                // 设置环境变量
+                const secretRes = await fetchWithStatus('配置环境变量',
+                    fetch(`https://api.cloudflare.com/client/v4/accounts/${config.accountId}/workers/scripts/${config.workerName}/secrets`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${config.apiToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ name: 'UUID', text: config.uuid, type: 'secret_text' })
+                    }).then(r => r.json()));
+
+                if (!secretRes.success) throw secretRes.errors;
+
+                // 绑定自定义域名
+                if (config.customDomain) {
+                    // 获取 Zone ID
+                    const zoneRes = await fetchWithStatus('验证域名所有权',
+                        fetch(`https://api.cloudflare.com/client/v4/zones?name=${config.customDomain.split('.').slice(-2).join('.')}`, {
+                            headers: { 'Authorization': `Bearer ${config.apiToken}` }
+                        }).then(r => r.json()));
+
+                    if (!zoneRes.success || !zoneRes.result[0]) throw '域名未在Cloudflare注册';
+                    const zoneId = zoneRes.result[0].id;
+
+                    // 创建 DNS 记录
+                    await fetchWithStatus('创建 DNS 记录',
+                        fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/dns_records`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${config.apiToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                type: 'CNAME',
+                                name: config.customDomain,
+                                content: `${config.workerName}.${config.accountId}.workers.dev`,
+                                ttl: 3600,
+                                proxied: true
+                            })
+                        }).then(r => r.json()));
+
+                    // 绑定 Worker 路由
+                    const routeRes = await fetchWithStatus('配置访问路由',
+                        fetch(`https://api.cloudflare.com/client/v4/zones/${zoneId}/workers/routes`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${config.apiToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                pattern: config.customDomain,
+                                script: config.workerName
+                            })
+                        }).then(r => r.json()));
+
+                    if (!routeRes.success) throw routeRes.errors;
+                }
+
+                // 显示结果
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h3>✅ 部署成功！</h3>
+                        <p>Worker 地址：<a href="https://${config.workerName}.${config.accountId}.workers.dev" target="_blank">https://${config.workerName}.${config.accountId}.workers.dev</a></p>
+                        ${config.customDomain ? `<p>自定义域名：<a href="https://${config.customDomain}" target="_blank">https://${config.customDomain}</a></p>` : ''}
+                        <p>环境变量 UUID：${config.uuid}</p>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error(error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ 部署失败</h3>
+                        <pre>错误详情：${JSON.stringify(error, null, 2)}</pre>
+                    </div>
+                `;
+            }
+        }
+    </script>
+
+    <h3>使用说明：</h3>
+    <ol>
+        <li>所有带 * 的字段为必填项</li>
+        <li>API 令牌需要包含以下权限：
+            <ul>
+                <li>Workers: Edit</li>
+                <li>DNS: Write</li>
+                <li>Account: Read</li>
+            </ul>
+        </li>
+        <li>自定义域名需要：
+            <ul>
+                <li>已在 Cloudflare 添加域名</li>
+                <li>域名服务器已指向 Cloudflare</li>
+                <li>建议提前开启代理状态（橙色云图标）</li>
+            </ul>
+        </li>
+    </ol>
+
+    <div class="warning">
+        <h3>⚠️ 安全提示：</h3>
+        <p>本工具会临时存储您的 API 令牌在浏览器内存中，建议：</p>
+        <ul>
+            <li>仅在受信任的设备使用</li>
+            <li>部署完成后立即刷新页面</li>
+            <li>为 API 令牌设置有效期限制</li>
+            <li>生产环境建议通过后端代理部署</li>
+        </ul>
+    </div>
+</body>
+</html>
