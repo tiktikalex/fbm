@@ -1,9 +1,4 @@
-#https://raw.githubusercontent.com/tiktikalex/fbm/refs/heads/main/cm/bestip.txt
-#https://addressesapi.090227.xyz/ip.164746.xyz
-#https://ipdb.api.030101.xyz/?type=bestcf&country=true
-#https://addressesapi.090227.xyz/
 
-#https://raw.githubusercontent.com/tiktikalex/cfbestipautocllect/refs/heads/main/ip.txt
 
 [2606:4700:a9:ef3a:e0f7:5e5c:f79e:d211]:2087#US-SJC-V6-01
 
